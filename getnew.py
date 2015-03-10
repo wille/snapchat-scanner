@@ -5,7 +5,7 @@ def main():
     
 def download(url, save):
     response = urllib.request.urlopen(url)
-    data = response.read()      # a `bytes` object
+    data = response.read()
     
     if save:
         f = open("test.txt", "wb")
