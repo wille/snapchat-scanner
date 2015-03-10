@@ -8,10 +8,10 @@
 abstract class SnapchatAgent {
 
 	/*
-	 * App version (as of 2013-11-20). Before updating this value, confirm
+	 * Before updating this value, confirm
 	 * that the library requests everything in the same way as the app.
 	 */
-	const VERSION = 'Snapchat/8.0.1.3';
+	const VERSION = 'Snapchat/9.0.2.0';
 
 	/*
 	 * The API URL. We're using the /bq endpoint, the one that the iPhone
@@ -21,7 +21,7 @@ abstract class SnapchatAgent {
 	 *   Make library capable of using different endpoints (some of the
 	 *   resource names are different, so they aren't interchangeable).
 	 */
-	const URL = 'https://feelinsonice-hrd.appspot.com/bq';
+	const URL = 'https://feelinsonice-hrd.appspot.com';
 
 	/*
 	 * The API secret. Used to create access tokens.
@@ -53,8 +53,13 @@ abstract class SnapchatAgent {
 		CURLOPT_CONNECTTIMEOUT => 5,
 		CURLOPT_RETURNTRANSFER => TRUE,
 		CURLOPT_TIMEOUT => 10,
-		CURLOPT_USERAGENT => 'Snapchat/8.0.1.3 (Nexus 5; Android 21; gzip)',
-		CURLOPT_HTTPHEADER => array('Accept-Language: en'),
+		CURLOPT_USERAGENT => 'Snapchat/9.2.0.0 (A0001; Android 4.4.4#5229c4ef56#19; gzip)',
+		CURLOPT_HTTPHEADER => array('Accept-Language: en', 'Accept-Locale: en_US'),
+	);
+
+	public static $CURL_HEADERS = array(
+		'Accept-Language: en;q=1',
+		'Accept-Locale: en'
 	);
 
 	/**
@@ -63,8 +68,9 @@ abstract class SnapchatAgent {
 	 * @return int
 	 *   The current timestamp, expressed in milliseconds since epoch.
 	 */
-	public function timestamp() {
-		return intval(microtime(TRUE) * 1000);
+	public function timestamp()
+	{
+		return round(microtime(TRUE) * 1000);
 	}
 
 	/**
@@ -78,7 +84,8 @@ abstract class SnapchatAgent {
 	 * @return data
 	 *   The padded data.
 	 */
-	public function pad($data, $blocksize = 16) {
+	public function pad($data, $blocksize = 16)
+	{
 		$pad = $blocksize - (strlen($data) % $blocksize);
 		return $data . str_repeat(chr($pad), $pad);
 	}
@@ -92,7 +99,8 @@ abstract class SnapchatAgent {
 	 * @return data
 	 *   The decrypted data.
 	 */
-	public function decryptECB($data) {
+	public function decryptECB($data)
+	{
 		return mcrypt_decrypt(MCRYPT_RIJNDAEL_128, self::BLOB_ENCRYPTION_KEY, self::pad($data), MCRYPT_MODE_ECB);
 	}
 
@@ -105,7 +113,8 @@ abstract class SnapchatAgent {
 	 * @return data
 	 *   The encrypted data.
 	 */
-	public function encryptECB($data) {
+	public function encryptECB($data)
+	{
 		return mcrypt_encrypt(MCRYPT_RIJNDAEL_128, self::BLOB_ENCRYPTION_KEY, self::pad($data), MCRYPT_MODE_ECB);
 	}
 
@@ -122,7 +131,8 @@ abstract class SnapchatAgent {
 	 * @return data
 	 *   The decrypted data.
 	 */
-	public function decryptCBC($data, $key, $iv) {
+	public function decryptCBC($data, $key, $iv)
+	{
 		// Decode the key and IV.
 		$iv = base64_decode($iv);
 		$key = base64_decode($key);
@@ -145,7 +155,8 @@ abstract class SnapchatAgent {
 	 * @return string
 	 *   The generated hash.
 	 */
-	public function hash($first, $second) {
+	public function hash($first, $second)
+	{
 		// Append the secret to the values.
 		$first = self::SECRET . $first;
 		$second = $second . self::SECRET;
@@ -160,7 +171,8 @@ abstract class SnapchatAgent {
 
 		// Create a new hash with pieces of the two we just made.
 		$result = '';
-		for ($i = 0; $i < strlen(self::HASH_PATTERN); $i++) {
+		for($i = 0; $i < strlen(self::HASH_PATTERN); $i++)
+		{
 			$result .= substr(self::HASH_PATTERN, $i, 1) ? $hash2[$i] : $hash1[$i];
 		}
 
@@ -176,14 +188,17 @@ abstract class SnapchatAgent {
 	 * @return bool
 	 *   TRUE if the blob looks like a media file, FALSE otherwise.
 	 */
-	function isMedia($data) {
+	function isMedia($data)
+	{
 		// Check for a JPG header.
-		if ($data[0] == chr(0xFF) && $data[1] == chr(0xD8)) {
+		if($data[0] == chr(0xFF) && $data[1] == chr(0xD8))
+		{
 			return TRUE;
 		}
 
 		// Check for a MP4 header.
-		if ($data[0] == chr(0x00) && $data[1] == chr(0x00)) {
+		if($data[0] == chr(0x00) && $data[1] == chr(0x00))
+		{
 			return TRUE;
 		}
 
@@ -199,9 +214,11 @@ abstract class SnapchatAgent {
 	 * @return bool
 	 *   TRUE if the blob looks like a compressed file, FALSE otherwise.
 	 */
-	function isCompressed($data) {
+	function isCompressed($data)
+	{
 		// Check for a PK header.
-		if ($data[0] == chr(0x50) && $data[1] == chr(0x4B)) {
+		if($data[0] == chr(0x50) && $data[1] == chr(0x4B))
+		{
 			return TRUE;
 		}
 
@@ -221,25 +238,33 @@ abstract class SnapchatAgent {
 	 * @return array
 	 *   Array containing both file contents, or FALSE if couldn't extract.
 	 */
-	function unCompress($data) {
-		if (!file_put_contents("./temp", $data)) {
+	function unCompress($data)
+	{
+		if(!file_put_contents("./temp", $data))
+		{
 			exit('Should have write access to own folder');
 		}
 		$resource = zip_open("./temp");
 		$result = FALSE;
-		if (is_resource($resource)) {
-			while($zip_entry = zip_read($resource)) {
+		if(is_resource($resource))
+		{
+			while($zip_entry = zip_read($resource))
+			{
 				$filename = zip_entry_name($zip_entry);
-				if (zip_entry_open($resource, $zip_entry, "r")) {
+				if(zip_entry_open($resource, $zip_entry, "r"))
+				{
 					$result[$filename] = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
 					zip_entry_close($zip_entry);
-				} else {
+				}
+				else
+				{
+				    unlink("./temp");
 					return FALSE;
 				}
 			}
 			zip_close($resource);
 		}
-		
+        unlink("./temp");
 		return $result;
 	}
 
@@ -256,7 +281,8 @@ abstract class SnapchatAgent {
 	 * @return data
 	 *   The retrieved data.
 	 */
-	public function get($endpoint) {
+	public function get($endpoint)
+	{
 		return file_get_contents(self::URL . $endpoint);
 	}
 
@@ -282,28 +308,97 @@ abstract class SnapchatAgent {
 	 *   The data returned from the API (decoded if JSON). Returns FALSE if
 	 *   the request failed.
 	 */
-	public function post($endpoint, $data, $params, $multipart = FALSE) {
+	public function post($endpoint, $data, $params, $multipart = FALSE, $debug = FALSE)
+	{
 		$ch = curl_init();
 
 		$data['req_token'] = self::hash($params[0], $params[1]);
-		$data['version'] = self::VERSION;
-
-		if (!$multipart) {
+        $boundary = "Boundary+0xAbCdEfGbOuNdArY";//md5(time());
+		if(!$multipart)
+		{
 			$data = http_build_query($data);
 		}
+		else
+		{
+            $datas = "--".$boundary."\r\n" . 'Content-Disposition: form-data; name="req_token"' . "\r\n\r\n" . self::hash($params[0], $params[1]) . "\r\n";
+            foreach($data as $key => $value)
+            {
+                if($key == "req_token") continue;
 
-		$options = self::$CURL_OPTIONS + array(
-			CURLOPT_POST => TRUE,
-			CURLOPT_POSTFIELDS => $data,
-			CURLOPT_URL => self::URL . $endpoint,
-			CURLOPT_HTTPHEADER => array(
-				'Accept-Language: en-GB;q=1, en;q=0.9',
-				'Accept-Locale: en'
-			),
-		);
+                if($key != 'data')
+                {
+                    $datas .= "--".$boundary."\r\n" . 'Content-Disposition: form-data; name="' . $key . '"' . "\r\n\r\n" . $value . "\r\n";
+                }
+                else
+                {
+                    $datas .= "--".$boundary."\r\n" . 'Content-Disposition: form-data; name="data"; filename="data"'."\r\n" . 'Content-Type: application/octet-stream'."\r\n\r\n" . $value . "\r\n";
+                }
+            }
+            $data = $datas . "--".$boundary."--";
+		}
+		$options = self::$CURL_OPTIONS;
+
+		if($debug)
+		{
+			curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+		}
+
+		if($endpoint == "/loq/login")
+		{
+				$headers = array_merge(self::$CURL_HEADERS, array("Authorization: Bearer {$params[2]}"));
+		}
+		else
+		{
+			$headers = self::$CURL_HEADERS;
+		}
+
+		if($multipart)
+		{
+            $headers = array_merge($headers, array("X-Timestamp: 0","Content-Type: multipart/form-data; boundary=$boundary"));
+		}
+
+		if($endpoint == '/ph/blob' || $endpoint == '/bq/blob' || $endpoint == '/bq/chat_media')
+		{
+		    $headers = array_merge($headers, array("X-Timestamp: " . $params[1]));
+			$options += array(
+				CURLOPT_URL => self::URL . $endpoint . "?{$data}"
+			);
+		}
+		else
+		{
+			$options += array(
+				CURLOPT_POST => TRUE,
+				CURLOPT_POSTFIELDS => $data,
+				CURLOPT_URL => self::URL . $endpoint
+			);
+		}
 		curl_setopt_array($ch, $options);
-
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 		$result = curl_exec($ch);
+		if($debug)
+		{
+			$info = curl_getinfo($ch);
+			echo "\nREQUEST TO: " .self::URL . $endpoint . "\n";
+			echo "\nSent Request info: " .print_r($info['request_header'], true). "\n";
+			if(is_array($data))
+			{
+				echo 'DATA: ' . print_r($data) . "\n";
+			}
+			else
+			{
+				echo 'DATA: ' . $data . "\n";
+			}
+
+			if($endpoint == "/loq/login" || $endpoint == "/all_updates")
+			{
+				$jsonResult = json_decode($result);
+				echo 'RESULT: ' . print_r($jsonResult) . "\n";
+			}
+			else
+			{
+				echo 'RESULT: ' . $result . "\n";
+			}
+		}
 
 		// If cURL doesn't have a bundle of root certificates handy, we provide
 		// ours (see http://curl.haxx.se/docs/sslcerts.html).
@@ -312,24 +407,43 @@ abstract class SnapchatAgent {
 			$result = curl_exec($ch);
 		}
 
+		$gi = curl_getinfo($ch);
 		// If the cURL request fails, return FALSE. Also check the status code
 		// since the API generally won't return friendly errors.
-		if ($result === FALSE || curl_getinfo($ch, CURLINFO_HTTP_CODE) != 200) {
+		if($result === FALSE)
+		{
 			curl_close($ch);
-			return FALSE;
+
+			return $result;
+		}
+
+		if(curl_getinfo($ch, CURLINFO_HTTP_CODE) != 200)
+		{
+				$return['data'] = $result;
+				$return['test'] = 1;
+				$return['code'] = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+				curl_close($ch);
+
+				return $return;
 		}
 
 		curl_close($ch);
 
-		if ($endpoint == '/blob') {
+		$return['error'] = 0;
+
+		if($endpoint == '/ph/blob' || $endpoint == '/bq/blob' || $endpoint == "/bq/snaptag_download" || $endpoint == '/bq/chat_media')
+		{
+			$return['data'] = $result;
 			return $result;
 		}
 
 		// Add support for foreign characters in the JSON response.
 		$result = iconv('UTF-8', 'UTF-8//IGNORE', utf8_encode($result));
 
-		$data = json_decode($result);
-		return json_last_error() == JSON_ERROR_NONE ? $data : FALSE;
+		$return['data'] = json_decode($result);
+
+		return $return;
 	}
 
 }
