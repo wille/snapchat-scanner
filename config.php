@@ -1,6 +1,6 @@
 <?php
 	
-	const USERNAME = "test";
-	const PASSWORD = "test";
+	define("USERNAME", "test");
+	define("PASSWORD", "test");
 
 ?>
