@@ -1,18 +1,18 @@
 import urllib.request
 
+url = "http://localhost/snapchat-grabber"
+
 def main():
-    print("Running scanner")
+    list = getlist("/fetch.php")
+    for file in list:
+        pass
     
-def download(url, save):
+def getlist(url):
     response = urllib.request.urlopen(url)
     data = response.read()
+    files = data.split("\n")
     
-    if save:
-        f = open("test.txt", "wb")
-        f.write(data)
-        f.close()
-    else:
-        return data.decode("utf-8")
+    return files;
         
 
 if __name__ == "__main__":
