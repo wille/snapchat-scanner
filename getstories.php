@@ -24,7 +24,7 @@ while (true) {
 		$save = true;
 	
 		if ($save) {
-			$path = $from + "/" + intval($id);
+			$path = "images/" . $from . "/" . intval($id);
 	
 			file_put_contents($path, $snapchat->getStory($id, $mediaKey, $mediaIV, $from, $save));
 	
